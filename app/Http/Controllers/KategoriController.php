@@ -1,28 +1,59 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\KategoriModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class KategoriController extends Controller
 {
     public function index()
     {
-        // $data = [
-        //     'kategori_kode' =>'SNK',
-        //     'kategori_nama' =>'Snack/Makanan Ringan',
-        //     'created_at' =>now()
-        // ];
-        // DB::table('m_kategori')->insert($data);
-        // return 'Insert data baru berhasil';
+        $breadcrumb = (object) [
+            'title' => 'Data Kategori Barang',
+            'list'  => ['Home', 'User']
+        ];
 
-        // $row = DB::table('m_kategori')->where('kategori_kode', 'SNK')->update(['kategori_nama' => 'Camilan']);
-        // return 'Update data berhasil. Jumlah data yang diupdate: ';
+        $page = (object) [
+            'title' => 'Data Kategori Barang'
+        ];
 
-        // $row = DB::table('m_kategori')->where('kategori_kode', 'SNK')->delete();
-        // return 'Delete data berhasil. Jumlah data yang dihapus: ' . $row. ' baris';
+        $activeMenu = 'kategori'; // set menu yang sedang aktif
 
-        $data = DB::table('m_kategori')->get();
-        return view('kategori', ['data' => $data]);
-    }    
+        $kategori = KategoriModel::all();
+
+        return view('kategori.index', [
+            'breadcrumb' => $breadcrumb,
+            'page'       => $page,
+            'kategori'       => $kategori,
+            'activeMenu' => $activeMenu
+        ]);
+    } 
+
+    public function list(Request $request)
+    {
+        $kategori = KategoriModel::select('kategori_id', 'kategori_kode', 'kategori_nama');
+
+        if ($request->kategori_id) {
+            $kategori->where('kategori_id', $request->kategori_id);
+        }
+
+        return DataTables::of($kategori)
+            ->addIndexColumn()
+            ->addColumn('aksi', function ($item) {
+                $btn  = '<a href="' . url('/kategori/' . $item->kategori_id) . '" class="btn btn-info btn-sm">Detail</a> ';
+                $btn .= '<a href="' . url('/kategori/' . $item->kategori_id . '/edit') . '" class="btn btn-warning btn-sm">Edit</a> ';
+                $btn .= '<form class="d-inline-block" method="POST" action="' . url('/kategori/' . $item->kategori_id) . '">'
+                    . csrf_field() . method_field('DELETE') .
+                    '<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm(\'Apakah Anda yakin menghapus data ini?\');">Hapus</button>
+                </form>';
+
+                return $btn;
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
+
+    }
+
 }
