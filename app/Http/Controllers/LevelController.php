@@ -3,19 +3,46 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\LevelModel;
+use Yajra\DataTables\DataTables;
 
 class LevelController extends Controller
 {
-
     public function index()
     {
-        // DB::insert('insert into m_level(level_kode, level_nama, created_at) values(?, ?, ?)', ['CUS', 'Pelanggan', now()]);
-        // return 'Insert data baru berhasil';
-        // $row = DB::update('UPDATE m_level SET level_nama = ? WHERE level_kode = ?', ['Customer', 'CUS']);
-        // return 'Update data berhasil. Jumlah data yang diupdate: ' . $row. ' baris';
-        // $row = DB::delete('DELETE FROM m_level WHERE level_kode = ?', ['CUS']);
-        $data = DB::select('select * from m_level');
-        return view('level', ['data' => $data]);
+        $breadcrumb = (object) [
+            'title' => 'Daftar Level',
+            'list'  => ['Home', 'Level']
+        ];
+
+        $page = (object) [
+            'title' => 'Daftar Level yang terdaftar dalam sistem'
+        ];
+
+        $activeMenu = 'level'; // set menu yang sedang aktif
+
+        $level = LevelModel::all();
+
+        return view('level.index', [
+            'breadcrumb' => $breadcrumb,
+            'page'       => $page,
+            'level'       => $level,
+            'activeMenu' => $activeMenu
+        ]);
     }
+
+        public function list(Request $request)
+    {
+        $levels = LevelModel::select('level_id', 'level_kode', 'level_nama');
+
+        // Filter kalau mau pakai
+        if ($request->level_id) {
+            $levels->where('level_id', $request->level_id);
+        }
+
+        return DataTables::of($levels)
+            ->addIndexColumn()
+            ->make(true);
+    }
+
 }
